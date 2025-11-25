@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'patient_id',
         as: 'patient'
       });
+      Session.hasMany(models.Recording, {
+    foreignKey: 'session_id',
+    as: 'recordings'
+    });
     }
   }
   Session.init({

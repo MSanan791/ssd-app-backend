@@ -1,12 +1,34 @@
-// config/config.js
+const dotenvResult = require('dotenv').config();
 
-require('dotenv').config(); // Ensure dotenv is required here to load .env variables
+console.log("DEBUG: Current Working Directory:", process.cwd());
+if (dotenvResult.error) {
+  console.log("DEBUG: Dotenv Error:", dotenvResult.error);
+} else {
+  console.log("DEBUG: Dotenv Parsed Keys:", Object.keys(dotenvResult.parsed || {}));
+}
+
+// Use console.log for debugging outside of the object definition
+console.log(`DEBUG: DB_PASSWORD Value is: [${process.env.DB_PASSWORD}]`);
 
 module.exports = {
   "development": {
-    "username": "postgres",
-    "password": "YourNewPassword",
-    "database": "ssd_db",
+    "username": process.env.DB_USER,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOST,
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": process.env.DB_USER,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOST,
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": process.env.DB_USER,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
     "host": process.env.DB_HOST,
     "dialect": "postgres"
   }
