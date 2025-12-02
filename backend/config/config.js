@@ -1,12 +1,5 @@
 const dotenvResult = require('dotenv').config();
 
-console.log("DEBUG: Current Working Directory:", process.cwd());
-if (dotenvResult.error) {
-  console.log("DEBUG: Dotenv Error:", dotenvResult.error);
-} else {
-  console.log("DEBUG: Dotenv Parsed Keys:", Object.keys(dotenvResult.parsed || {}));
-}
-
 // Use console.log for debugging outside of the object definition
 console.log(`DEBUG: DB_PASSWORD Value is: [${process.env.DB_PASSWORD}]`);
 
