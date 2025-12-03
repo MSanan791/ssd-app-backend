@@ -1,24 +1,32 @@
 // server.js
-require('dotenv').config(); // Load environment variables
+require('dotenv').config();
 const express = require('express');
-const db = require('./models'); // Imports all models and the connection setup
+const cors = require('cors'); // <--- 1. MISSING IN YOUR FILE
+const db = require('./models');
+const apiRouter = require('./routes/api'); // <--- 2. MISSING IN YOUR FILE (Ensure backend/routes/api.js exists!)
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json()); // For parsing application/json
+app.use(cors()); // <--- Enable CORS
+app.use(express.json());
+// Increase limit for audio uploads if needed, though Multer usually handles this
+app.use(express.urlencoded({ extended: true })); 
 
-// --- Routes will go here ---
+// --- Mount Routes ---
+app.use('/api', apiRouter); // <--- 3. THIS WIRES UP THE ROUTE
+
+// Basic Test Route
 app.get('/', (req, res) => {
   res.send('SSD Backend Service is running!');
 });
-// ----------------------------
 
 // Sync database and start server
+// '0.0.0.0' is crucial for Android Emulator/Physical Device access
 db.sequelize.sync()
   .then(() => {
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => { 
       console.log(`✅ Server listening on port ${PORT}`);
       console.log(`💾 Database connected and synchronized`);
     });
