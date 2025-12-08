@@ -46,20 +46,23 @@ AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 AWS_BUCKET_NAME=your_bucket_name
 AWS_REGION=your_region (e.g., us-east-1)
+```
 🏃‍♂️ Running the Server
 Run Database Migrations: (Ensure your Sequelize CLI command is configured in package.json or run via npx)
 
 Bash
-
+```
 npx sequelize-cli db:migrate
+```
 Start the Server:
 
-Bash
-
+```Bash
 node server.js
+```
 The server will start on http://localhost:3000 (or the defined PORT).
 
 🔌 API Endpoints
+
 Authentication
 POST /api/auth/login - Authenticate Therapist and receive JWT.
 
@@ -80,14 +83,16 @@ Behavior: Uploads files to S3 and writes DB records within a single transaction.
 📂 File Structure
 Plaintext
 
-backend/
+```backend/
 ├── config/             # DB and Auth configuration
 ├── controllers/        # Route logic (Auth, Patient, Session)
 ├── middleware/         # Auth verification (JWT)
 ├── models/             # Sequelize definitions (User, Patient, Session, Recording)
 ├── routes/             # API Route definitions
 └── server.js           # Entry point
+```
 🔒 Security Note
 This project uses a centralized auth configuration to prevent secret leakage.
 
 Ensure .env is included in your .gitignore and never committed to version control.
+
