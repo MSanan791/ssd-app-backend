@@ -62,7 +62,7 @@ node server.js
 The server will start on http://localhost:3000 (or the defined PORT).
 
 🔌 API Endpoints
-
+```
 Authentication
 POST /api/auth/login - Authenticate Therapist and receive JWT.
 
@@ -77,7 +77,7 @@ POST /api/sessions/finalize - Atomic Upload Endpoint.
 Accepts multipart/form-data.
 
 Receives JSON metadata (annotations, patientId) and multiple audio_files.
-
+```
 Behavior: Uploads files to S3 and writes DB records within a single transaction. If any part fails, the entire operation is rolled back to ensure data integrity.
 
 📂 File Structure
@@ -95,4 +95,5 @@ Plaintext
 This project uses a centralized auth configuration to prevent secret leakage.
 
 Ensure .env is included in your .gitignore and never committed to version control.
+
 
