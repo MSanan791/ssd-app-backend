@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Therapist } = require('../models');
+const { JWT_SECRET } = require('../config/auth');
+
 
 exports.signup = async (req, res) => {
   try {
@@ -39,6 +41,7 @@ exports.login = async (req, res) => {
     const validPass = await bcrypt.compare(password, therapist.password_hash);
     if (!validPass) return res.status(401).json({ message: 'Invalid credentials' });
 
+    console.log("🔐 Login Secret Used:", JWT_SECRET);
     // Create Token
     const token = jwt.sign(
       { id: therapist.id, email: therapist.email },
