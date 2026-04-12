@@ -45,7 +45,7 @@ def process_audio_task(recordings: list[RecordingEvent]):
             
             # 1. Run DeepFilterNet WITH THE AGGRESSIVE POST-FILTER (--pf)
             print("Applying DeepFilterNet with aggressive post-filtering...")
-            subprocess.run(["deepFilter", local_raw_path, "-o", output_dir, "--pf"], check=True)
+            subprocess.run(["deepFilter", local_raw_path, "-o", output_dir, "--pf","--atten-lim", "100"], check=True)
             
             # 2. Find the file it actually created
             base_temp_name = os.path.splitext(local_raw_path)[0] # removes .wav
