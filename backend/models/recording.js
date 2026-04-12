@@ -25,7 +25,13 @@ module.exports = (sequelize, DataTypes) => {
     error_type: DataTypes.STRING,
     sound_target: DataTypes.STRING,
     other_errors: DataTypes.TEXT,
-    is_skipped: DataTypes.BOOLEAN
+    is_skipped: DataTypes.BOOLEAN,
+    clean_audio_s3_key: DataTypes.TEXT,
+    clean_audio_url: DataTypes.TEXT,
+    is_processed: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    }
   }, {
     sequelize,
     modelName: 'Recording',

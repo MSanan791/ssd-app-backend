@@ -18,16 +18,26 @@ exports.getPatients = async (req, res) => {
 exports.createPatient = async (req, res) => {
   try {
     const therapistId = req.user ? req.user.id : 1;
+    
+    // Explicitly pull fields to prevent pollution
+    const { name, age, gender, primary_language, initial_ssd_type, initial_notes } = req.body;
+
     const patient = await Patient.create({
-      ...req.body,
+      name,
+      age,
+      gender,
+      primary_language,
+      initial_ssd_type,
+      initial_notes,
       therapist_id: therapistId
     });
+    
     res.status(201).json(patient);
   } catch (err) {
+    console.error("Create Patient Error:", err); // Helpful for debugging on VM
     res.status(500).json({ error: err.message });
   }
 };
-
 exports.getPatientById = async (req, res) => {
   try {
     const patient = await Patient.findByPk(req.params.id);

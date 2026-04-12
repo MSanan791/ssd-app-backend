@@ -1,4 +1,5 @@
 const { sequelize, Session, Recording } = require('../models');
+const axios = require('axios'); // <-- Add this
 
 exports.finalizeSession = async (req, res) => {
   const transaction = await sequelize.transaction();
@@ -31,12 +32,26 @@ exports.finalizeSession = async (req, res) => {
       };
     });
 
-    await Recording.bulkCreate(recordingPayload, { transaction });
-    await transaction.commit();
+    // Capture the created recordings so we have their IDs
+    const createdRecordings = await Recording.bulkCreate(recordingPayload, { transaction, returning: true });
+    
+    await transaction.commit(); //
 
-    res.status(201).json({ message: 'Session finalized', sessionId: newSession.id });
+    // --- NEW: Trigger Python Microservice Asynchronously ---
+    const microservicePayload = {
+      recordings: createdRecordings.map(rec => ({
+        recording_id: rec.id,
+        raw_s3_key: rec.audio_s3_key
+      }))
+    };
+
+    // Fire and forget (don't await it so the mobile client doesn't wait)
+    axios.post('http://127.0.0.1:8000/process-session', microservicePayload)
+         .catch(err => console.error("Failed to start AI processing:", err.message));
+
+    res.status(201).json({ message: 'Session finalized', sessionId: newSession.id }); //
   } catch (err) {
-    await transaction.rollback();
+    await transaction.rollback(); //
     console.error("Upload Error:", err);
     res.status(500).json({ error: err.message });
   }

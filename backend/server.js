@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 
 // Sync database and start server
 // '0.0.0.0' is crucial for Android Emulator/Physical Device access
-db.sequelize.sync()
+db.sequelize.sync({ alter : true })
   .then(() => {
     app.listen(PORT, '0.0.0.0', () => { 
       console.log(`✅ Server listening on port ${PORT}`);
