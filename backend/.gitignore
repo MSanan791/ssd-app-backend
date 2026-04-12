@@ -67,3 +67,5 @@ ehthumbs.db
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+/uploads
