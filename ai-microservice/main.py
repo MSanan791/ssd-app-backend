@@ -1,28 +1,17 @@
-# ai-microservice/main.py
+import glob
+import os
+import subprocess
+import requests
+import boto3
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
-import boto3
-import subprocess
-import os
-import requests
 from dotenv import load_dotenv
-
-app = FastAPI()
 
 load_dotenv() 
 
 app = FastAPI()
 
-# AWS Setup 
-s3 = boto3.client('s3', 
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_REGION')
-)
-BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
-EXPRESS_WEBHOOK_URL = "http://localhost:3000/api/internal/recordings/update-clean"
-
-# AWS Setup (Make sure these match your Express .env)
+# --- AWS Setup (Cleaned up duplicates) ---
 s3 = boto3.client('s3', 
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
@@ -43,27 +32,42 @@ def process_audio_task(recordings: list[RecordingEvent]):
         raw_key = rec.raw_s3_key
         filename = raw_key.split('/')[-1]
         
-        # 3. Define the paths BEFORE the try block so they always exist
+        # Define the paths BEFORE the try block so they always exist
         local_raw_path = f"temp_{filename}"
         clean_local_path = None 
         
         try:
-            # Add a quick debug print to verify variables loaded
             print(f"Downloading {raw_key} from bucket: {BUCKET_NAME}")
-            
-            # 1. Download raw file from S3
             s3.download_file(BUCKET_NAME, raw_key, local_raw_path)
             
-            # 2. Run DeepFilterNet
             output_dir = "clean_output"
             os.makedirs(output_dir, exist_ok=True)
-            subprocess.run(["deepFilter", local_raw_path, "-o", output_dir], check=True)
             
-            # Now assign the clean path since it successfully generated
-            clean_local_path = os.path.join(output_dir, filename)
+            # 1. Run DeepFilterNet WITH THE AGGRESSIVE POST-FILTER (--pf)
+            print("Applying DeepFilterNet with aggressive post-filtering...")
+            subprocess.run(["deepFilter", local_raw_path, "-o", output_dir, "--pf"], check=True)
+            
+            # 2. Find the file it actually created
+            base_temp_name = os.path.splitext(local_raw_path)[0] # removes .wav
+            search_pattern = os.path.join(output_dir, f"{base_temp_name}*.wav")
+            generated_files = glob.glob(search_pattern)
+
+            if generated_files:
+                actual_output_path = generated_files[0]
+                clean_local_path = os.path.join(output_dir, filename) # The clean name we want
+                
+                # 3. Rename it so S3 gets a perfectly named file
+                if actual_output_path != clean_local_path:
+                    if os.path.exists(clean_local_path):
+                        os.remove(clean_local_path)
+                    os.rename(actual_output_path, clean_local_path)
+            else:
+                raise FileNotFoundError("Could not find the DeepFilterNet output file.")
+            
+            # 4. Upload clean file back to S3
             clean_s3_key = f"clean_recordings/clean_{filename}"
+            print(f"Uploading clean audio to S3: {clean_s3_key}")
             
-            # 3. Upload clean file back to S3
             s3.upload_file(
                 clean_local_path, 
                 BUCKET_NAME, 
@@ -73,24 +77,23 @@ def process_audio_task(recordings: list[RecordingEvent]):
             
             clean_url = f"https://{BUCKET_NAME}.s3.{os.getenv('AWS_REGION')}.amazonaws.com/{clean_s3_key}"
 
-            # 4. Notify Express that this recording is done
+            # 5. Notify Express that this recording is done
             requests.post(EXPRESS_WEBHOOK_URL, json={
                 "recording_id": rec.recording_id,
-                "clean_s3_key": clean_s3_key,
                 "clean_url": clean_url
             })
+            
+            print(f"✅ Successfully processed, renamed, and uploaded {filename}")
 
         except Exception as e:
             print(f"Failed to process {rec.recording_id}: {e}")
         finally:
-            # 4. Safely cleanup files
+            # 6. Safely cleanup local temp files
             if os.path.exists(local_raw_path): 
                 os.remove(local_raw_path)
-            # Only attempt to delete the clean file if the variable was assigned and exists
             if clean_local_path and os.path.exists(clean_local_path): 
                 os.remove(clean_local_path)
 
-                
 @app.post("/process-session")
 async def process_session(event: SessionProcessEvent, background_tasks: BackgroundTasks):
     # Add the heavy processing to a background thread so we return a 200 OK to Express instantly
